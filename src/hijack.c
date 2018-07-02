@@ -3,6 +3,13 @@
 
 static int (*real_socket)(int domain, int type, int protocol);
 
+/**
+ * Wrapper around libc's socket(). The wrapper simply prints a string
+ * before calling libc's socket() function.
+ *
+ * Returns a socket file descriptor for the new socket, on success. On
+ * error, -1 is returned, and errno is set appropriately.
+ */
 int socket(int domain, int type, int protocol) {
   printf("%s:\t Hijacking socket(%d, %d, %d) call\n",
          __func__, domain, type, protocol);
@@ -17,7 +24,11 @@ void __attribute__((constructor)) init(void) {
     return;
   }
 
-  dlerror();
+  char *error = dlerror();
+  if (error) {
+    printf("%s\n", error);
+    return;
+  }
 
   real_socket = (int (*)(int, int, int)) dlsym(handle, "socket");
 
